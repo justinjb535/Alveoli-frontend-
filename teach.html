@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link rel="manifest" href="manifest.json"> 
- <style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="white">
+  <title>Login Page</title>
+  <style>
     :root{--bg:#0f172a; --card:rgba(255,255,255,0.08); --accent:#6366f1; --text:#e2e8f0; --muted:#94a3b8;}
     *{box-sizing:border-box; margin:0; padding:0; font-family: Inter, system-ui, sans-serif;}
     body{min-height:100vh; display:grid; place-items:center; background: radial-gradient(1200px 800px at 80% -10%, #1e293b, transparent), radial-gradient(800px 600px at -10% 110%, #312e81, transparent), var(--bg); color:var(--text);}
@@ -25,7 +26,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const SUPABASE_URL = 'https://pctbcbdqgicazzgwlrhr.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_Ck_wUGp0GaYOiyri3LC2VQ_VJ4um9uL'
-const BASE_URL =/*"http://10.48.46.64:2000"*/ 'https://alveoli.onrender.com'
+const BASE_URL = 'https://alveoli.onrender.com'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -35,7 +36,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 })
 
-const handleRedirect = async () => {
+/*const handleRedirect = async () => {
   const { data: { session }} = await supabase.auth.getSession(); // <-- get it here
   
   if(!session) return;// no session yet, stay on login page
@@ -82,11 +83,10 @@ supabase.auth.onAuthStateChange((_event, session) => {
 })
 
 // Run on page load
-handleRedirect();
-// ✅ Utility: check session and backend school status
-/*const checkSchoolStatus = async () => {
-  const { data: { session }} = await supabase.auth.getSession();
-  if (!session) return null; // no session yet
+handleRedirect();*/
+// stop here 
+const handleRedirect = async (session) => {
+  if(!session) return;
 
   console.log('TOKEN EXISTS:', !!session.access_token);
 
@@ -94,65 +94,46 @@ handleRedirect();
     headers: { 'Authorization': `Bearer ${session.access_token}` }
   });
 
-  if (res.status === 200) {
-    return { hasSchool: true };
-  } else if (res.status === 404) {
-    return { hasSchool: false };
-  } else {
-    await supabase.auth.signOut();
-    throw new Error("Auth error. Please login again");
+  if(res.status === 200){
+    window.location.href = 'dash.html'; 
+    document.getElementById('regi').style.display = "none";
   }
-};
+  else if(res.status === 404) {
+    document.getElementById('regi').style.display = "block"
+  } 
+  else {
+    alert('Auth error. Please login again');
+    await supabase.auth.signOut();
+  }
+}
 
-// ✅ Login with email
+// EMAIL LOGIN
 window.emailLogin = async () => {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return alert(error.message);
+  if(error) return alert(error.message);
+  // don't call handleRedirect here. Let onAuthStateChange do it
+}
 
-  const status = await checkSchoolStatus();
-  if (!status) return; // no session yet
-
-  if (status.hasSchool) {
-    document.getElementById('regi').style.display = "none";
-    // 👉 No auto redirect — you can add a button or manual navigation here
-  } else {
-    document.getElementById('regi').style.display = "block";
-  }
-};
-
-// ✅ Login with Google
+// GOOGLE LOGIN  
 window.googleLogin = async () => {
   await supabase.auth.signInWithOAuth({ 
     provider: 'google',
-    options: { redirectTo: `${BASE_URL}/login.html` }
-  });
-};
+    options: { redirectTo: window.location.origin + '/login.html' } // use current origin
+  })
+}
 
-// ✅ Handle OAuth redirect back
-supabase.auth.onAuthStateChange(async (_event, session) => {
-  if (session) {
-    const status = await checkSchoolStatus();
-    if (status?.hasSchool) {
-      document.getElementById('regi').style.display = "none";
-    } else {
-      document.getElementById('regi').style.display = "block";
-    }
-  }
-});
+// THIS FIRES WHEN SESSION IS ACTUALLY READY
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) handleRedirect(session)
+})
 
-// ✅ Run on page load (optional)
-checkSchoolStatus().then(status => {
-  if (!status) return;
-  if (status.hasSchool) {
-    document.getElementById('regi').style.display = "none";
-  } else {
-    document.getElementById('regi').style.display = "block";
-  }
-});*/
+// Check if already logged in on page load
+supabase.auth.getSession().then(({data: {session}}) => {
+  if(session) handleRedirect(session)
+})
 </script>
-
 </head>
 <body>
   <div class="card">
@@ -178,4 +159,4 @@ checkSchoolStatus().then(status => {
   </div>
 
 </body>
-</html>
+</html>	

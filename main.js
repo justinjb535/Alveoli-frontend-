@@ -1008,6 +1008,18 @@ async function loadPassRate() {
   }
 }
 
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log('SW registered:', reg.scope);
+        })
+        .catch(err => {
+          console.log('SW registration failed:', err);
+        });
+    });
+  }
+
 // Put this at bottom of dash.html and regi.html
 history.pushState(null, null, location.href);
 window.onpopstate = function () {
