@@ -243,7 +243,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 })
 
-  let checked = false; // prevent double redirect
+/*  let checked = false; // prevent double redirect
 
   const doRedirect = async () => {
     if(checked) return;
@@ -261,9 +261,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     console.log('TOKEN EXISTS:',!!session.access_token);
 
     try {
-      // Give backend 10s to wake up
+      // Give backend 30+s to wake up
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 10 sec timeout
 
       const res = await fetch(`${BASE_URL}/me`, {
         headers: { 'Authorization': `Bearer ${session.access_token}` },
@@ -292,9 +292,61 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 
   // Start: Show loading for at least 3 sec so animation plays, then check
-  setTimeout(doRedirect, 6000); 
+  //setTimeout(doRedirect, 6000); 
 
-  setTimeout(doRedirect, 10000);
+  setTimeout(doRedirect, 10000);*/
+
+let checked = false;
+
+const doRedirect = async () => {
+  if(checked) return;
+  checked = true;
+
+  const { data: { session }} = await supabase.auth.getSession();
+
+  if(!session) {
+    console.log('NO TOKEN - Go to login');
+    document.querySelector('.loading-text').innerText = "No session found. Redirecting to login...";
+    setTimeout(() => window.location.href = './register.html', 1500);
+    return;
+  }
+
+  console.log('TOKEN EXISTS:',!!session.access_token);
+
+  try {
+    const controller = new AbortController();
+    // INCREASE timeout - Render free tier needs 30+ seconds
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
+
+    const res = await fetch(`${BASE_URL}/me`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if(res.status === 200){
+      document.querySelector('.loading-text').innerText = "Welcome back!";
+      setTimeout(() => window.location.href = './dash.html', 800); 
+    }
+    else if(res.status === 404) {
+      document.querySelector('.loading-text').innerText = "Let's set up your school";
+      document.getElementById('regi').style.display = "block"
+      document.querySelector('.progress-bar').style.animation = 'none';
+    }
+    else {
+      throw new Error('Auth error')
+    }
+  } catch(e) {
+    console.log(e);
+    document.querySelector('.loading-text').innerText = "Server waking up... retrying";
+    // Retry once after 3 sec
+    setTimeout(() => { checked = false; doRedirect(); }, 3000);
+  }
+}
+
+// Let animation play for 2 seconds, then check
+setTimeout(doRedirect, 2000);
+// Remove the second setTimeout(doRedirect, 10000) - it's redundant!
 </script>
 </head>
 
