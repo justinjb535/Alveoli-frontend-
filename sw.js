@@ -11,7 +11,7 @@ const urlsToCache = [
   "/manifest.json",
   "/A_20260714_180909_0000 (1).png",
   "/IMG_20260714_194104.png",
-  "/alv_logo"
+  "/alv_logo.png"
 ];
 
 // 1. INSTALL: cache new files and take over immediately
